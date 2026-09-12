@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { completeLearningStepAction } from "@/app/actions";
 import { CheckpointDone } from "@/components/checkpoint/checkpoint-done";
 import { ResourceContent } from "@/components/resource-content";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { getLearningMission } from "@/lib/learning/data";
 import { toProgressLabel, toResourceLabel } from "@/lib/learning/labels";
 
@@ -87,10 +88,12 @@ export default async function StepPage({ params, searchParams }: StepPageProps) 
 
           {step.progressStatus === "in_progress" ? (
             <form action={completeAction} className="step-footer-action">
-              <button className="button" type="submit">
-                <Check aria-hidden="true" size={19} />
+              <SubmitButton
+                icon={<Check aria-hidden="true" size={19} />}
+                pendingLabel="Menyimpan progres…"
+              >
                 Selesaikan Checkpoint
-              </button>
+              </SubmitButton>
             </form>
           ) : null}
         </>

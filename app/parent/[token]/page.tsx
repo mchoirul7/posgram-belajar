@@ -2,13 +2,13 @@ import {
   BookOpenCheck,
   CheckCircle2,
   Flame,
-  Home,
   Map,
   Sparkles
 } from "lucide-react";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createLearningMissionAction } from "@/app/actions";
+import { PendingLink } from "@/components/ui/pending-link";
+import { SubmitButton } from "@/components/ui/submit-button";
 import {
   getParticipantDetailByShareToken,
   getTargetWeaknesses
@@ -55,12 +55,6 @@ export default async function ParentReportPage({
   return (
     <main className="parent-share-page">
       <header className="parent-share-hero">
-        <nav className="parent-share-nav" aria-label="Navigasi laporan">
-          <span />
-          <Link href="/" aria-label="Beranda">
-            <Home aria-hidden="true" size={18} />
-          </Link>
-        </nav>
         <div className={`avatar portrait large ${participant.avatarTone}`}>
           {participant.avatarInitials}
         </div>
@@ -134,22 +128,26 @@ export default async function ParentReportPage({
           </div>
 
           {roadmap?.learningMissionId ? (
-            <Link
+            <PendingLink
               className="generate-button"
               href={`/mission/${roadmap.learningMissionId}`}
+              icon={<Map aria-hidden="true" size={18} />}
+              pendingLabel="Membuka roadmap…"
             >
-              <Map aria-hidden="true" size={18} />
               Buka Roadmap Belajar
-            </Link>
+            </PendingLink>
           ) : roadmap && targets.length > 0 ? (
             <form action={createLearningMissionAction}>
               <input name="studentId" type="hidden" value={participant.studentId} />
               <input name="roadmapId" type="hidden" value={roadmap.id} />
               <input name="returnTo" type="hidden" value={returnTo} />
-              <button className="generate-button" type="submit">
-                <CheckCircle2 aria-hidden="true" size={18} />
+              <SubmitButton
+                className="generate-button"
+                icon={<CheckCircle2 aria-hidden="true" size={18} />}
+                pendingLabel="Menyusun roadmap…"
+              >
                 Generate Roadmap
-              </button>
+              </SubmitButton>
             </form>
           ) : (
             <p className="parent-empty-copy">

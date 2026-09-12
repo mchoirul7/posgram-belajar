@@ -188,3 +188,74 @@ export function buildRoadmapLayout(
 export function toPolylinePoints(points: RoadmapPoint[]): string {
   return points.map((point) => `${point.x},${point.y}`).join(" ");
 }
+
+export type ConceptProgress = {
+  id: string;
+  name: string;
+  total: number;
+  completed: number;
+  percent: number;
+  status: "completed" | "in_progress" | "not_started";
+};
+
+export type MissionProgressSummary = {
+  total: number;
+  completed: number;
+  percent: number;
+  lastActivityAt: string | null;
+  concepts: ConceptProgress[];
+};
+
+/**
+ * Progress of a mission, for the teacher's view of what the family has done.
+ *
+ * Counts required checkpoints only, matching how the roadmap decides a concept
+ * is finished, and reports the most recent completion so a teacher can see not
+ * just how far along a student is but whether they are still moving.
+ */
+export function summarizeMissionProgress(
+  mission: LearningMissionDetails
+): MissionProgressSummary {
+  const concepts = mission.paths.map(({ learningPath }) => {
+    const steps = learningPath.steps.filter((step) => step.isRequired);
+    const completed = steps.filter(
+      (step) => step.progressStatus === "completed"
+    ).length;
+    const started = learningPath.steps.some(
+      (step) => step.progressStatus !== "not_started"
+    );
+
+    return {
+      id: learningPath.id,
+      name: learningPath.targetConcept.name,
+      total: steps.length,
+      completed,
+      percent: steps.length > 0 ? Math.round((completed / steps.length) * 100) : 0,
+      status:
+        steps.length > 0 && completed === steps.length
+          ? ("completed" as const)
+          : started
+            ? ("in_progress" as const)
+            : ("not_started" as const)
+    };
+  });
+
+  const total = concepts.reduce((sum, concept) => sum + concept.total, 0);
+  const completed = concepts.reduce(
+    (sum, concept) => sum + concept.completed,
+    0
+  );
+  const completionTimes = mission.paths
+    .flatMap(({ learningPath }) => learningPath.steps)
+    .map((step) => step.progressCompletedAt)
+    .filter((value): value is string => Boolean(value))
+    .sort();
+
+  return {
+    total,
+    completed,
+    percent: total > 0 ? Math.round((completed / total) * 100) : 0,
+    lastActivityAt: completionTimes.at(-1) ?? null,
+    concepts
+  };
+}

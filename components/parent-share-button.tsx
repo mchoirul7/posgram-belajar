@@ -3,15 +3,31 @@
 import { useState, type MouseEvent } from "react";
 import { Share2 } from "lucide-react";
 import Link from "next/link";
+import { buildParentShareMessage } from "@/lib/students/share-message";
 
 type ParentShareButtonProps = {
+  className?: string;
+  /** Shown when idle. The roadmap tab reuses this button as "Buat Roadmap". */
+  label?: string;
   href: string;
   studentName: string;
+  assessmentName?: string;
 };
 
+/**
+ * Hands the parent report link to a parent over WhatsApp.
+ *
+ * The anchor keeps the plain report URL so ctrl-click, middle-click and a
+ * JS-less browser still work; a normal click instead opens WhatsApp with the
+ * message already written, since a bare link on its own tells a parent nothing
+ * about why they are being sent it.
+ */
 export function ParentShareButton({
+  className = "share-parent-button",
+  label = "Bagikan ke Orang Tua",
   href,
-  studentName
+  studentName,
+  assessmentName
 }: ParentShareButtonProps) {
   const [copied, setCopied] = useState(false);
 
@@ -20,34 +36,35 @@ export function ParentShareButton({
       return;
     }
 
+    event.preventDefault();
+
     const shareUrl = new URL(href, window.location.origin).toString();
+    const message = buildParentShareMessage({
+      studentName,
+      assessmentName,
+      shareUrl
+    });
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
 
+    if (window.open(whatsappUrl, "_blank", "noopener")) {
+      return;
+    }
+
+    // Popup blocked: put the whole message on the clipboard instead of
+    // silently doing nothing.
     try {
-      if (navigator.share) {
-        event.preventDefault();
-        await navigator.share({
-          text: `Laporan belajar ${studentName}`,
-          title: `Laporan ${studentName}`,
-          url: shareUrl
-        });
-        return;
-      }
-
-      if (navigator.clipboard) {
-        event.preventDefault();
-        await navigator.clipboard.writeText(shareUrl);
-        setCopied(true);
-        window.setTimeout(() => setCopied(false), 1800);
-      }
+      await navigator.clipboard.writeText(message);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
     } catch {
-      setCopied(false);
+      window.location.href = whatsappUrl;
     }
   }
 
   return (
-    <Link className="share-parent-button" href={href} onClick={handleClick}>
+    <Link className={className} href={href} onClick={handleClick}>
       <Share2 aria-hidden="true" size={18} />
-      {copied ? "Link Disalin" : "Bagikan ke Orang Tua"}
+      {copied ? "Pesan Disalin" : label}
     </Link>
   );
 }
